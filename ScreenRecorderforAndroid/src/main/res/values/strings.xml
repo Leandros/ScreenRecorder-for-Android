@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ScreenRecorder for Android</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="desc_size">Size. Default is the device\'s main display resolution.</string>
+    <string name="hint_size_width">Width. Leave empty for default.</string>
+    <string name="hint_size_height">Height. Leave empty for default.</string>
+
+    <string name="desc_bitrate">Video bit rate. Default is 4Mbps.</string>
+    <string name="hint_bitrate">Bit rate. Leave empty for default.</string>
+
+    <string name="desc_time">Maximum recording time. Default / Maximum is 180.</string>
+    <string name="hint_time">Time. Leave empty for default.</string>
+
+    <string name="record">Record</string>
+    <string name="toast_invalid_values">Please enter correct values</string>
+    <string name="error_time_editext">Please enter a number between 1 and 180. Leave empty for default.</string>
+    <string name="error_bitrate_edittext">Please enter a number between 1 and 50. Leave empty for default.</string>
+
+</resources>
