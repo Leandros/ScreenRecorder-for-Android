@@ -19,5 +19,7 @@
     <string name="toast_invalid_values">Please enter correct values</string>
     <string name="error_time_editext">Please enter a number between 1 and 180. Leave empty for default.</string>
     <string name="error_bitrate_edittext">Please enter a number between 1 and 50. Leave empty for default.</string>
+    <string name="error_invalid_wxh">Please enter values for both width and height!</string>
+    <string name="error_start_recording">Something went wrong starting the recording</string>
 
 </resources>

@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -149,12 +151,45 @@ public class MainActivity extends Activity {
                     return;
                 }
 
+                boolean widthSet = !TextUtils.isEmpty(mWidthEditText.getText());
+                boolean heightSet = !TextUtils.isEmpty(mHeightEditText.getText());
+                if ((!widthSet && heightSet) || (widthSet && !heightSet)) {
+                    Toast.makeText(mContext, mContext.getString(R.string.error_invalid_wxh), Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                boolean bitrateSet = !TextUtils.isEmpty(mBitrateEditText.getText());
+                boolean timeSet = !TextUtils.isEmpty(mTimeEditText.getText());
+
                 try {
-                    Process process = Runtime.getRuntime().exec("top -n 1 -d 1");
-                    BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    StringBuilder stringBuilder = new StringBuilder("screenrecord");
+                    if (widthSet) {
+                        stringBuilder.append(" --size ").append(mWidthEditText.getText()).append("x").append(mHeightEditText.getText());
+                    }
+                    if (bitrateSet) {
+                        stringBuilder.append(" --bit-rate ").append(mBitrateEditText.getText());
+                    }
+                    if (timeSet) {
+                        stringBuilder.append(" --time-limit ").append(mTimeEditText.getText());
+                    }
+
+                    // TODO User definable location.
+                    stringBuilder.append(" ").append(Environment.getExternalStorageDirectory().toString()).append("/recording.mp4");
+                    Log.d("TAG", "comamnd: " + stringBuilder.toString());
+
+                    Process process = Runtime.getRuntime().exec(stringBuilder.toString());
+                    StringBuilder outputBuilder = new StringBuilder("Output: ");
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    while ((bufferedReader.readLine()) != null) {
+                        outputBuilder.append("\n").append(bufferedReader.readLine());
+                    }
+
+                    bufferedReader.close();
+                    Log.d("TAG", outputBuilder.toString());
 
                 } catch (IOException e) {
                     e.printStackTrace();
+                    Toast.makeText(mContext, mContext.getString(R.string.error_start_recording), Toast.LENGTH_LONG).show();
                 }
             }
         };
