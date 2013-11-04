@@ -8,9 +8,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -27,6 +27,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 
 public class MainActivity extends Activity {
     private static final int RUNNING_NOTIFICATION_ID = 73;
@@ -169,44 +170,52 @@ public class MainActivity extends Activity {
                 boolean bitrateSet = !TextUtils.isEmpty(mBitrateEditText.getText());
                 boolean timeSet = !TextUtils.isEmpty(mTimeEditText.getText());
 
+                StringBuilder stringBuilder = new StringBuilder("/system/bin/screenrecord");
+                if (widthSet) {
+                    stringBuilder.append(" --size ").append(mWidthEditText.getText()).append("x").append(mHeightEditText.getText());
+                }
+                if (bitrateSet) {
+                    stringBuilder.append(" --bit-rate ").append(mBitrateEditText.getText());
+                }
+                if (timeSet) {
+                    stringBuilder.append(" --time-limit ").append(mTimeEditText.getText());
+                }
+
+                // TODO User definable location.
+                stringBuilder.append(" ").append(Environment.getExternalStorageDirectory().toString()).append("/recording.mp4");
+                Log.d("TAG", "comamnd: " + stringBuilder.toString());
+
                 try {
-                    StringBuilder stringBuilder = new StringBuilder("/system/bin/screenrecord");
-                    if (widthSet) {
-                        stringBuilder.append(" --size ").append(mWidthEditText.getText()).append("x").append(mHeightEditText.getText());
-                    }
-                    if (bitrateSet) {
-                        stringBuilder.append(" --bit-rate ").append(mBitrateEditText.getText());
-                    }
-                    if (timeSet) {
-                        stringBuilder.append(" --time-limit ").append(mTimeEditText.getText());
-                    }
+                    new SuTask(stringBuilder.toString().getBytes("ASCII")).execute();
 
-                    // TODO User definable location.
-                    stringBuilder.append(" ").append(Environment.getExternalStorageDirectory().toString()).append("/recording.mp4");
-                    Log.d("TAG", "comamnd: " + stringBuilder.toString());
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
 
+        private class SuTask extends AsyncTask<Boolean, Void, Boolean> {
+            private final byte[] mCommand;
+
+            public SuTask(byte[] command) {
+                super();
+                this.mCommand = command;
+            }
+
+            @Override
+            protected Boolean doInBackground(Boolean... booleans) {
+                try {
                     Process sh = Runtime.getRuntime().exec("su", null, null);
                     OutputStream outputStream = sh.getOutputStream();
-                    outputStream.write(stringBuilder.toString().getBytes("ASCII"));
+                    outputStream.write(mCommand);
                     outputStream.flush();
                     outputStream.close();
-                    sh.waitFor();
 
                     final NotificationManager notificationManager = (NotificationManager) mContext.getSystemService(NOTIFICATION_SERVICE);
-
                     notificationManager.notify(RUNNING_NOTIFICATION_ID, createRunningNotification(mContext));
-                    Handler handler = new Handler();
-                    Runnable runnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            notificationManager.cancel(RUNNING_NOTIFICATION_ID);
-                            File file = new File(Environment.getExternalStorageDirectory().toString() + "/recording.mp4");
-                            notificationManager.notify(FINISHED_NOTIFICATION_ID, createFinishedNotification(mContext, file));
-                        }
-                    };
 
-                    long timeInMs = Integer.valueOf(mTimeEditText.getText().toString()) * 1000;
-                    handler.postDelayed(runnable, timeInMs);
+                    sh.waitFor();
+                    return true;
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -215,6 +224,20 @@ public class MainActivity extends Activity {
                 } catch (IOException e) {
                     e.printStackTrace();
                     Toast.makeText(mContext, mContext.getString(R.string.error_start_recording), Toast.LENGTH_LONG).show();
+                }
+
+                return false;
+            }
+
+            @Override
+            protected void onPostExecute(Boolean bool) {
+                super.onPostExecute(bool);
+                if (bool) {
+                    final NotificationManager notificationManager = (NotificationManager) mContext.getSystemService(NOTIFICATION_SERVICE);
+                    notificationManager.cancel(RUNNING_NOTIFICATION_ID);
+
+                    File file = new File(Environment.getExternalStorageDirectory().toString() + "/recording.mp4");
+                    notificationManager.notify(FINISHED_NOTIFICATION_ID, createFinishedNotification(mContext, file));
                 }
             }
 
@@ -249,7 +272,7 @@ public class MainActivity extends Activity {
 
                 return mBuilder.build();
             }
-        };
+        }
     }
 
 }
