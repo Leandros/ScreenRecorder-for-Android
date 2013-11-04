@@ -2,9 +2,15 @@ package de.skilloverflow.screenrecorderforandroid;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -18,10 +24,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 
 public class MainActivity extends Activity {
+    private static final int RUNNING_NOTIFICATION_ID = 73;
+    private static final int FINISHED_NOTIFICATION_ID = 1337;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -183,6 +192,22 @@ public class MainActivity extends Activity {
                     outputStream.close();
                     sh.waitFor();
 
+                    final NotificationManager notificationManager = (NotificationManager) mContext.getSystemService(NOTIFICATION_SERVICE);
+
+                    notificationManager.notify(RUNNING_NOTIFICATION_ID, createRunningNotification(mContext));
+                    Handler handler = new Handler();
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            notificationManager.cancel(RUNNING_NOTIFICATION_ID);
+                            File file = new File(Environment.getExternalStorageDirectory().toString() + "/recording.mp4");
+                            notificationManager.notify(FINISHED_NOTIFICATION_ID, createFinishedNotification(mContext, file));
+                        }
+                    };
+
+                    long timeInMs = Integer.valueOf(mTimeEditText.getText().toString()) * 1000;
+                    handler.postDelayed(runnable, timeInMs);
+
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     Toast.makeText(mContext, mContext.getString(R.string.error_start_recording), Toast.LENGTH_LONG).show();
@@ -191,6 +216,38 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                     Toast.makeText(mContext, mContext.getString(R.string.error_start_recording), Toast.LENGTH_LONG).show();
                 }
+            }
+
+            private Notification createRunningNotification(Context context) {
+                Notification.Builder mBuilder = new Notification.Builder(context)
+                        .setSmallIcon(android.R.drawable.stat_notify_sdcard)
+                        .setContentTitle(context.getResources().getString(R.string.app_name))
+                        .setContentText("Recording Running")
+                        .setTicker("Recording Running")
+                        .setPriority(Integer.MAX_VALUE)
+                        .setOngoing(true);
+
+                return mBuilder.build();
+            }
+
+            private Notification createFinishedNotification(Context context, File file) {
+                Intent intent = new Intent();
+                intent.setAction(Intent.ACTION_VIEW);
+                intent.setDataAndType(Uri.fromFile(file), "video/mp4");
+
+                PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT);
+
+                Notification.Builder mBuilder = new Notification.Builder(context)
+                        .setSmallIcon(android.R.drawable.stat_notify_sdcard)
+                        .setContentTitle(context.getResources().getString(R.string.app_name))
+                        .setContentText("Recording Finished")
+                        .setTicker("Recording Finished")
+                        .setContentIntent(pendingIntent)
+                        .setOngoing(false)
+                        .setAutoCancel(true);
+
+                return mBuilder.build();
             }
         };
     }
