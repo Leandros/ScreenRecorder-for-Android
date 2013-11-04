@@ -18,9 +18,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 public class MainActivity extends Activity {
 
@@ -162,7 +161,7 @@ public class MainActivity extends Activity {
                 boolean timeSet = !TextUtils.isEmpty(mTimeEditText.getText());
 
                 try {
-                    StringBuilder stringBuilder = new StringBuilder("screenrecord");
+                    StringBuilder stringBuilder = new StringBuilder("/system/bin/screenrecord");
                     if (widthSet) {
                         stringBuilder.append(" --size ").append(mWidthEditText.getText()).append("x").append(mHeightEditText.getText());
                     }
@@ -177,15 +176,16 @@ public class MainActivity extends Activity {
                     stringBuilder.append(" ").append(Environment.getExternalStorageDirectory().toString()).append("/recording.mp4");
                     Log.d("TAG", "comamnd: " + stringBuilder.toString());
 
-                    Process process = Runtime.getRuntime().exec(stringBuilder.toString());
-                    StringBuilder outputBuilder = new StringBuilder("Output: ");
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                    while ((bufferedReader.readLine()) != null) {
-                        outputBuilder.append("\n").append(bufferedReader.readLine());
-                    }
+                    Process sh = Runtime.getRuntime().exec("su", null, null);
+                    OutputStream outputStream = sh.getOutputStream();
+                    outputStream.write(stringBuilder.toString().getBytes("ASCII"));
+                    outputStream.flush();
+                    outputStream.close();
+                    sh.waitFor();
 
-                    bufferedReader.close();
-                    Log.d("TAG", outputBuilder.toString());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    Toast.makeText(mContext, mContext.getString(R.string.error_start_recording), Toast.LENGTH_LONG).show();
 
                 } catch (IOException e) {
                     e.printStackTrace();
