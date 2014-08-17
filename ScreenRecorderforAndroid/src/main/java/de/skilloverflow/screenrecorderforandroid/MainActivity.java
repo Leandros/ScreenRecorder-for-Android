@@ -206,6 +206,10 @@ public class MainActivity extends Activity {
             protected Boolean doInBackground(Boolean... booleans) {
                 try {
                     Process sh = Runtime.getRuntime().exec("su", null, null);
+                    
+                    //avoid recording superuser toast
+                    thread.sleep(1);
+                    
                     OutputStream outputStream = sh.getOutputStream();
                     outputStream.write(mCommand);
                     outputStream.flush();
