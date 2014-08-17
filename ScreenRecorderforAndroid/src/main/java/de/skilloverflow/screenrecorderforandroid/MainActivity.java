@@ -182,7 +182,7 @@ public class MainActivity extends Activity {
                 }
 
                 // TODO User definable location.
-                stringBuilder.append(" ").append(Environment.getExternalStorageDirectory().toString()).append("/recording.mp4");
+                stringBuilder.append(" ").append("sdcard").append("/recording.mp4");
                 Log.d("TAG", "comamnd: " + stringBuilder.toString());
 
                 try {
@@ -207,6 +207,10 @@ public class MainActivity extends Activity {
                 try {
                     Process sh = Runtime.getRuntime().exec("su", null, null);
                     OutputStream outputStream = sh.getOutputStream();
+
+        			//avoid superuser toast recording
+        			Thread.sleep(5000);
+        			
                     outputStream.write(mCommand);
                     outputStream.flush();
                     outputStream.close();
