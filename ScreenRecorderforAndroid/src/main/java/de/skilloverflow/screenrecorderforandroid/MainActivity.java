@@ -182,7 +182,7 @@ public class MainActivity extends Activity {
                 }
 
                 // TODO User definable location.
-                stringBuilder.append(" ").append(Environment.getExternalStorageDirectory().toString()).append("/recording.mp4");
+                stringBuilder.append(" ").append("sdcard").append("/recording.mp4");
                 Log.d("TAG", "comamnd: " + stringBuilder.toString());
 
                 try {
